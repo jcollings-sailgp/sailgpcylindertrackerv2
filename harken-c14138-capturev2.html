@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="theme-color" content="#0a2342">
+<title>Harken C14138 · SailGP</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+<style>
+/* ── Reset & tokens ───────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+:root {
+  --navy:     #0a2342;
+  --navy2:    #0d2e58;
+  --teal:     #00b383;
+  --teal2:    #008f69;
+  --amber:    #f0900a;
+  --red:      #e03434;
+  --white:    #ffffff;
+  --bg:       #f2f4f7;
+  --card:     #ffffff;
+  --border:   #dde2ea;
+  --text:     #131820;
+  --muted:    #68737f;
+  --font:     -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+  --mono:     "SF Mono", "Fira Code", "Consolas", monospace;
+  --r:        14px;
+  --r-sm:     9px;
+}
+html, body { height: 100%; font-family: var(--font); background: var(--bg); color: var(--text); font-size: 15px; }
+
+/* ── Sticky header ───────────────────────────────────────── */
+.header {
+  position: sticky; top: 0; z-index: 60;
+  background: var(--navy);
+  padding: 0 16px;
+  display: flex; align-items: center; gap: 12px;
+  height: 56px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.35);
+}
+.hk-logo {
+  width: 34px; height: 34px; border-radius: 7px;
+  background: var(--teal);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 800; color: #fff; letter-spacing: -.5px;
+  flex-shrink: 0;
+}
+.header-text h1  { font-size: 15px; font-weight: 700; color: #fff; line-height: 1.2; }
+.header-text p   { font-size: 11px; color: rgba(255,255,255,.5); }
+.sync-pill {
+  margin-left: auto; flex-shrink: 0;
+  font-size: 11px; font-weight: 600;
+  padding: 4px 10px; border-radius: 20px;
+  display: flex; align-items: center; gap: 5px;
+  transition: background .3s;
+}
+.sync-pill.none    { background: rgba(255,255,255,.1);  color: rgba(255,255,255,.45); }
+.sync-pill.ready   { background: rgba(0,179,131,.2);    color: #4dffd0; }
+.sync-pill.synced  { background: rgba(0,179,131,.25);   color: #3ff7c9; }
+.sync-pill.error   { background: rgba(224,52,52,.25);   color: #ff9999; }
+.sync-pill.syncing { background: rgba(240,144,10,.2);   color: #ffc96b; }
+.sync-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+/* ── Progress bar ────────────────────────────────────────── */
+.progress-row {
+  background: var(--navy2);
+  padding: 8px 16px;
+  display: flex; align-items: center; gap: 10px;
+}
+.prog-track { flex: 1; height: 5px; background: rgba(255,255,255,.12); border-radius: 3px; overflow: hidden; }
+.prog-fill  { height: 100%; background: var(--teal); border-radius: 3px; transition: width .4s ease; }
+.prog-label { font-size: 11px; color: rgba(255,255,255,.5); white-space: nowrap; min-width: 80px; text-align: right; }
+
+/* ── Scroll body ─────────────────────────────────────────── */
+.body { padding: 16px; max-width: 520px; margin: 0 auto; }
+.view { display: none; }
+.view.active { display: block; }
+
+/* ── Setup screen ────────────────────────────────────────── */
+.setup-card {
+  background: var(--card); border-radius: var(--r);
+  border: 1px solid var(--border);
+  padding: 20px; margin-bottom: 12px;
+}
+.setup-card h2 { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+.setup-card p  { font-size: 13px; color: var(--muted); line-height: 1.55; margin-bottom: 16px; }
+.steps { display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; }
+.step  { display: flex; gap: 10px; font-size: 13px; color: var(--text); line-height: 1.45; }
+.step-n {
+  width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+  background: var(--navy); color: #fff;
+  font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  margin-top: 1px;
+}
+.url-row { display: flex; gap: 8px; }
+.url-input {
+  flex: 1; padding: 11px 12px;
+  border: 1.5px solid var(--border); border-radius: var(--r-sm);
+  font-size: 13px; color: var(--text); background: var(--bg);
+}
+.url-input:focus { outline: none; border-color: var(--teal); }
+.btn-teal {
+  padding: 11px 18px;
+  background: var(--teal); color: #fff; border: none;
+  border-radius: var(--r-sm); font-size: 13px; font-weight: 700;
+  cursor: pointer; white-space: nowrap;
+}
+.btn-teal:hover { background: var(--teal2); }
+.skip-txt { text-align: center; font-size: 13px; color: var(--muted); padding: 10px; cursor: pointer; }
+.skip-txt:hover { color: var(--text); }
+
+/* ── Fleet grid ──────────────────────────────────────────── */
+.section-eyebrow {
+  font-size: 10px; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--muted);
+  margin: 0 0 10px;
+}
+.fleet-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr);
+  gap: 10px; margin-bottom: 16px;
+}
+.boat-card {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--r); padding: 14px 14px 12px;
+  cursor: pointer; position: relative; overflow: hidden;
+  transition: border-color .15s, box-shadow .15s;
+  -webkit-user-select: none; user-select: none;
+}
+.boat-card:active { transform: scale(.97); }
+.boat-card.complete { border-color: var(--teal); }
+.boat-card.partial  { border-color: var(--amber); }
+.boat-card .b-num   { font-size: 30px; font-weight: 800; color: var(--navy); line-height: 1; }
+.boat-card .b-flag  { font-size: 11px; font-weight: 700; color: var(--muted); letter-spacing: .06em; margin-top: 2px; }
+.boat-card .b-stat  { font-size: 11px; color: var(--muted); margin-top: 8px; display: flex; align-items: center; gap: 5px; }
+.dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.dot-p { background: #c4ccd6; }
+.dot-i { background: var(--amber); }
+.dot-c { background: var(--teal); }
+.tick-badge {
+  position: absolute; top: 10px; right: 10px;
+  width: 20px; height: 20px; border-radius: 50%; background: var(--teal);
+  display: flex; align-items: center; justify-content: center;
+}
+.tick-badge svg { width: 11px; height: 11px; }
+.queue-banner {
+  background: #fffbeb; border: 1.5px solid #fde68a;
+  border-radius: var(--r); padding: 12px 14px;
+  margin-bottom: 14px;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+.queue-banner p   { font-size: 13px; color: #92400e; }
+.queue-banner b   { font-size: 12px; font-weight: 700; }
+.retry-btn {
+  background: var(--amber); color: #fff; border: none;
+  border-radius: 7px; padding: 7px 14px;
+  font-size: 12px; font-weight: 700; cursor: pointer; flex-shrink: 0;
+}
+
+/* ── Capture view ────────────────────────────────────────── */
+.back-btn {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 13px; color: var(--muted); cursor: pointer;
+  background: none; border: none; padding: 0 0 14px;
+}
+.back-btn:hover { color: var(--text); }
+.back-btn svg { width: 16px; height: 16px; }
+
+.boat-hero {
+  background: var(--navy); border-radius: var(--r);
+  padding: 16px 20px; margin-bottom: 14px;
+  display: flex; align-items: center; gap: 14px;
+}
+.hero-num  { font-size: 52px; font-weight: 900; color: #fff; line-height: 1; }
+.hero-info h2 { font-size: 20px; font-weight: 700; color: #fff; }
+.hero-info p  { font-size: 12px; color: rgba(255,255,255,.45); margin-top: 3px; }
+.hero-prog    { margin-top: 10px; }
+.hero-prog-track { height: 3px; background: rgba(255,255,255,.15); border-radius: 2px; overflow: hidden; }
+.hero-prog-fill  { height: 100%; background: var(--teal); border-radius: 2px; transition: width .3s; }
+.hero-prog-lbl   { font-size: 10px; color: rgba(255,255,255,.4); margin-top: 4px; }
+
+/* tech bar */
+.tech-bar {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--r); padding: 12px 14px;
+  display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+}
+.tech-bar svg { width: 18px; height: 18px; color: var(--muted); flex-shrink: 0; }
+.tech-bar input { flex: 1; border: none; background: transparent; font-size: 14px; color: var(--text); }
+.tech-bar input:focus { outline: none; }
+.tech-bar input::placeholder { color: var(--muted); }
+
+/* system groups */
+.sys-group { margin-bottom: 10px; }
+.sys-group-header {
+  background: var(--navy); color: #fff;
+  border-radius: var(--r-sm) var(--r-sm) 0 0;
+  padding: 9px 14px;
+  font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.sys-badge {
+  background: rgba(255,255,255,.15); color: rgba(255,255,255,.7);
+  font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 10px;
+}
+
+/* cylinder row */
+.cyl-row {
+  background: var(--card); border: 1px solid var(--border);
+  border-top: none; padding: 12px 14px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+}
+.cyl-row:last-child { border-radius: 0 0 var(--r-sm) var(--r-sm); }
+.cyl-row.captured   { background: #f0fdf9; }
+
+.cyl-meta {
+  grid-column: 1 / -1;
+  display: flex; align-items: center; gap: 7px; margin-bottom: 4px;
+}
+.cyl-pos  { font-size: 12px; font-weight: 700; color: var(--text); }
+.cyl-side {
+  font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 8px;
+  text-transform: uppercase; letter-spacing: .04em;
+}
+.side-port { background: #dbeafe; color: #1d4ed8; }
+.side-stbd { background: #fce7f3; color: #be185d; }
+.side-na   { background: #f3f4f6; color: #6b7280; }
+.cyl-done-badge {
+  margin-left: auto; font-size: 10px; color: var(--teal); font-weight: 700;
+  display: flex; align-items: center; gap: 3px;
+}
+
+/* field input + scan */
+.f-wrap { display: flex; flex-direction: column; gap: 4px; }
+.f-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.f-row   { display: flex; gap: 5px; }
+.f-in {
+  flex: 1; padding: 9px 10px;
+  border: 1.5px solid var(--border); border-radius: var(--r-sm);
+  font-size: 13px; font-family: var(--mono); color: var(--text); background: var(--bg);
+  transition: border-color .15s;
+  min-width: 0;
+}
+.f-in:focus  { outline: none; border-color: var(--teal); background: #fff; }
+.f-in.filled { border-color: var(--teal); background: #f0fdf9; }
+.scan-btn {
+  background: var(--navy); color: #fff; border: none;
+  border-radius: var(--r-sm); padding: 0 10px;
+  cursor: pointer; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s;
+}
+.scan-btn:hover  { background: var(--navy2); }
+.scan-btn:active { background: var(--teal); }
+.scan-btn svg { width: 18px; height: 18px; }
+
+/* save button */
+.save-btn {
+  width: 100%; padding: 16px;
+  background: var(--teal); color: #fff; border: none;
+  border-radius: var(--r); font-size: 16px; font-weight: 800;
+  cursor: pointer; margin: 14px 0 28px;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: background .15s;
+  letter-spacing: .02em;
+}
+.save-btn:hover   { background: var(--teal2); }
+.save-btn:active  { transform: scale(.98); }
+.save-btn:disabled{ background: #7ecfb8; cursor: not-allowed; }
+
+/* ── QR scanner overlay ──────────────────────────────────── */
+.scanner-wrap {
+  display: none; position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,.94);
+  flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+}
+.scanner-wrap.open { display: flex; }
+.scanner-viewport { position: relative; width: min(320px, 88vw); }
+.scanner-viewport video { width: 100%; border-radius: 12px; display: block; }
+.scanner-viewport canvas { display: none; }
+.scan-frame {
+  position: absolute; inset: 0; border-radius: 12px;
+  border: 2px solid var(--teal); pointer-events: none;
+}
+/* corner brackets */
+.scan-frame::before, .scan-frame::after {
+  content: ""; position: absolute;
+  width: 22px; height: 22px; border-color: var(--teal); border-style: solid;
+}
+.scan-frame::before { top: -2px; left: -2px; border-width: 3px 0 0 3px; border-radius: 10px 0 0 0; }
+.scan-frame::after  { bottom: -2px; right: -2px; border-width: 0 3px 3px 0; border-radius: 0 0 10px 0; }
+.scan-hint  { font-size: 13px; color: rgba(255,255,255,.65); }
+.scan-found { background: var(--teal); color: #fff; padding: 10px 20px; border-radius: 9px; font-size: 14px; font-weight: 700; display: none; }
+.scan-cancel {
+  background: rgba(255,255,255,.1); color: #fff; border: none;
+  border-radius: 9px; padding: 12px 32px; font-size: 15px; cursor: pointer;
+}
+.scan-cancel:hover { background: rgba(255,255,255,.18); }
+
+/* ── Toast ───────────────────────────────────────────────── */
+.toast {
+  position: fixed; bottom: 24px; left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--navy); color: #fff;
+  padding: 12px 20px; border-radius: 10px;
+  font-size: 14px; font-weight: 600;
+  z-index: 300; opacity: 0;
+  transition: transform .3s cubic-bezier(.34,1.56,.64,1), opacity .25s;
+  pointer-events: none; white-space: nowrap;
+  box-shadow: 0 8px 28px rgba(0,0,0,.25);
+  display: flex; align-items: center; gap: 8px;
+}
+.toast.show   { transform: translateX(-50%) translateY(0); opacity: 1; }
+.toast.ok     { background: var(--teal); }
+.toast.err    { background: var(--red); }
+.toast.warn   { background: var(--amber); }
+</style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<header class="header">
+  <div class="hk-logo">HK</div>
+  <div class="header-text">
+    <h1>Harken C14138</h1>
+    <p>SailGP F50 · Cylinder Capture</p>
+  </div>
+  <div class="sync-pill none" id="sync-pill">
+    <span class="sync-dot"></span><span id="sync-lbl">Offline</span>
+  </div>
+</header>
+
+<!-- ── Progress ── -->
+<div class="progress-row">
+  <div class="prog-track"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+  <div class="prog-label"><span id="prog-n">0</span> / <span id="prog-total">0</span> cylinders</div>
+</div>
+
+<!-- ── Views ── -->
+<div class="body">
+
+  <!-- SETUP -->
+  <div class="view active" id="v-setup">
+    <div class="setup-card">
+      <h2>Connect to Google Sheets</h2>
+      <p>Deploy the included <strong>Code.gs</strong> as a Google Apps Script Web App attached to the Part Tracking Number database, then paste the URL below.</p>
+      <div class="steps">
+        <div class="step"><div class="step-n">1</div><div>Open the Google Sheet → Extensions → Apps Script → paste <strong>Code.gs</strong></div></div>
+        <div class="step"><div class="step-n">2</div><div>Deploy → New Deployment → Type: <strong>Web App</strong></div></div>
+        <div class="step"><div class="step-n">3</div><div>Execute as: <strong>Me</strong> · Access: <strong>Anyone</strong> → Deploy</div></div>
+        <div class="step"><div class="step-n">4</div><div>Copy the Web App URL and paste it here:</div></div>
+      </div>
+      <div class="url-row">
+        <input class="url-input" id="ep-input" type="url" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off">
+        <button class="btn-teal" onclick="saveEndpoint()">Connect</button>
+      </div>
+    </div>
+    <div class="skip-txt" onclick="skipSetup()">Skip — capture offline only</div>
+  </div>
+
+  <!-- FLEET -->
+  <div class="view" id="v-fleet">
+    <div id="queue-slot"></div>
+    <div class="section-eyebrow">Select boat</div>
+    <div class="fleet-grid" id="fleet-grid"></div>
+  </div>
+
+  <!-- CAPTURE -->
+  <div class="view" id="v-capture">
+    <button class="back-btn" onclick="showFleet()">
+      <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+      All boats
+    </button>
+    <div class="boat-hero">
+      <div class="hero-num" id="h-num"></div>
+      <div class="hero-info">
+        <h2 id="h-flag"></h2>
+        <p>Harken C14138 · 19 cylinders</p>
+        <div class="hero-prog">
+          <div class="hero-prog-track"><div class="hero-prog-fill" id="h-prog" style="width:0%"></div></div>
+          <div class="hero-prog-lbl" id="h-prog-lbl">0 / 19 captured</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Technician -->
+    <div class="tech-bar">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      <input type="text" id="tech-name" placeholder="Technician name (optional)" autocomplete="name">
+    </div>
+
+    <!-- Cylinder groups injected here -->
+    <div id="cyl-groups"></div>
+
+    <button class="save-btn" id="save-btn" onclick="saveCapture()">
+      <svg fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24" width="20" height="20"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+      Save &amp; Sync to Sheet
+    </button>
+  </div>
+
+</div><!-- /.body -->
+
+<!-- ── QR Scanner ── -->
+<div class="scanner-wrap" id="scanner">
+
+  <!-- State: requesting permission -->
+  <div id="scan-state-requesting" style="text-align:center; padding: 20px;">
+    <div style="width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;">
+      <svg fill="none" stroke="#fff" stroke-width="1.5" viewBox="0 0 24 24" width="28" height="28"><path stroke-linecap="round" d="M15 10a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" d="M6.343 17.657A8 8 0 1117.657 6.343 8 8 0 016.343 17.657z"/></svg>
+    </div>
+    <p style="color:#fff;font-size:15px;font-weight:600;margin-bottom:6px">Requesting camera…</p>
+    <p style="color:rgba(255,255,255,.55);font-size:13px">Allow camera access when Safari asks</p>
+  </div>
+
+  <!-- State: live camera -->
+  <div id="scan-state-live" style="display:none;flex-direction:column;align-items:center;gap:14px;width:100%;">
+    <div class="scanner-viewport">
+      <video id="s-video" playsinline autoplay muted webkit-playsinline></video>
+      <canvas id="s-canvas"></canvas>
+      <div class="scan-frame"></div>
+    </div>
+    <p class="scan-hint">Point camera at the QR code on the cylinder</p>
+    <div class="scan-found" id="scan-found"></div>
+  </div>
+
+  <!-- State: permission denied — manual fallback -->
+  <div id="scan-state-denied" style="display:none;text-align:center;padding:20px;width:100%;max-width:320px;">
+    <div style="width:56px;height:56px;border-radius:50%;background:rgba(224,52,52,.25);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;">
+      <svg fill="none" stroke="#ff9999" stroke-width="2" viewBox="0 0 24 24" width="28" height="28"><circle cx="12" cy="12" r="9"/><path stroke-linecap="round" d="M12 8v4m0 4h.01"/></svg>
+    </div>
+    <p style="color:#fff;font-size:15px;font-weight:600;margin-bottom:6px">Camera blocked</p>
+    <p style="color:rgba(255,255,255,.6);font-size:13px;margin-bottom:16px;line-height:1.5">
+      Safari blocked camera access.<br>Fix: <strong style="color:#fff">Settings → Safari → Camera → Allow</strong><br>then reload this page.
+    </p>
+    <p style="color:rgba(255,255,255,.5);font-size:12px;margin-bottom:8px">Or type / paste the value below:</p>
+    <input id="manual-scan-input" type="text"
+      style="width:100%;padding:11px 12px;border-radius:9px;border:1.5px solid rgba(255,255,255,.25);background:rgba(255,255,255,.1);color:#fff;font-size:15px;font-family:var(--mono);text-align:center;margin-bottom:10px"
+      placeholder="Type QR or serial here" autocapitalize="characters" autocorrect="off">
+    <button onclick="commitManual()"
+      style="width:100%;padding:12px;background:#00b383;border:none;border-radius:9px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:10px">
+      Use this value
+    </button>
+  </div>
+
+  <button class="scan-cancel" onclick="closeScanner()">Cancel</button>
+</div>
+
+<!-- ── Toast ── -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// DATA DEFINITIONS
+// ═══════════════════════════════════════════════════════════
+
+const BOATS = [
+  { num:"01", flag:"ESP" }, { num:"02", flag:"GER" }, { num:"03", flag:"USA" },
+  { num:"04", flag:"GBR" }, { num:"05", flag:"BRA" }, { num:"06", flag:"AUS" },
+  { num:"07", flag:"DEN" }, { num:"09", flag:"SUI" }, { num:"10", flag:"CAN" },
+  { num:"11", flag:"ITA" }, { num:"12", flag:"FRA" }, { num:"13", flag:"SWE" },
+  { num:"14", flag:"NZL" }
+];
+
+// 19 cylinders per boat, grouped by system
+// side: "Port" | "Stbd" | "Centre" | null
+const CYL_DEFS = [
+  // ── Platform ──────────────────────────────────────────────
+  { group:"Platform", id:"DB-RAKE-P",  label:"DB Rake",          side:"Port",   partNo:"HYD-1303-ASY" },
+  { group:"Platform", id:"DB-RAKE-S",  label:"DB Rake",          side:"Stbd",   partNo:"HYD-1303-ASY" },
+  { group:"Platform", id:"CANT-P",     label:"Cant",             side:"Port",   partNo:"HYD-1305-ASY" },
+  { group:"Platform", id:"CANT-S",     label:"Cant",             side:"Stbd",   partNo:"HYD-1305-ASY" },
+  { group:"Platform", id:"UPDN-P",     label:"Up / Down",        side:"Port",   partNo:"HYD-1327-ASY" },
+  { group:"Platform", id:"UPDN-S",     label:"Up / Down",        side:"Stbd",   partNo:"HYD-1327-ASY" },
+  { group:"Platform", id:"LOCK-P",     label:"Lock Trip",        side:"Port",   partNo:"HYD-1301-ASY" },
+  { group:"Platform", id:"LOCK-S",     label:"Lock Trip",        side:"Stbd",   partNo:"HYD-1301-ASY" },
+  { group:"Platform", id:"JIB-CUNN",   label:"Jib Cunningham",   side:"Centre", partNo:"HYD-1605-ASY" },
+  { group:"Platform", id:"JIB-LEAD",   label:"Jib Lead",         side:"Centre", partNo:"C14692" },
+  { group:"Platform", id:"JIB-SHEET",  label:"Jib Sheet",        side:"Centre", partNo:"C14691" },
+  { group:"Platform", id:"RUD-RAKE-P", label:"Rudder Rake",      side:"Port",   partNo:"HYD-1302-ASY" },
+  { group:"Platform", id:"RUD-RAKE-S", label:"Rudder Rake",      side:"Stbd",   partNo:"HYD-1302-ASY" },
+  // ── Wing ──────────────────────────────────────────────────
+  { group:"Wing",     id:"CA1",        label:"CA1",              side:"Centre", partNo:"C14138" },
+  { group:"Wing",     id:"CA2",        label:"CA2",              side:"Centre", partNo:"C14138" },
+  { group:"Wing",     id:"CA3",        label:"CA3",              side:"Centre", partNo:"HYD-1311-ASY" },
+  { group:"Wing",     id:"CA4",        label:"CA4",              side:"Centre", partNo:"HYD-1311-ASY" },
+  { group:"Wing",     id:"CA5",        label:"CA5",              side:"Centre", partNo:"HYD-1324-ASY" },
+  { group:"Wing",     id:"CA6",        label:"CA6",              side:"Centre", partNo:"HYD-1313-ASY" },
+];
+
+const TOTAL_PER_BOAT = CYL_DEFS.length; // 19
+
+// ═══════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════
+let S = {
+  endpoint:    "",
+  captured:    {},   // { "01": { "DB-RAKE-P": {qr,serial,tech,ts}, … } }
+  queue:       [],   // rows pending sync
+  currentBoat: null,
+};
+function persist() { try { localStorage.setItem("hk_v2", JSON.stringify(S)); } catch(e){} }
+function load()    { try { const d = localStorage.getItem("hk_v2"); if(d) S = {...S,...JSON.parse(d)}; } catch(e){} }
+
+// ═══════════════════════════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════════════════════════
+load();
+updateSyncPill();
+updateGlobalProgress();
+if (S.endpoint) showFleet(); else show("v-setup");
+
+// ═══════════════════════════════════════════════════════════
+// SETUP
+// ═══════════════════════════════════════════════════════════
+function saveEndpoint() {
+  const v = document.getElementById("ep-input").value.trim();
+  if (!v.startsWith("https://script.google.com")) { toast("Paste a valid Apps Script URL","warn"); return; }
+  S.endpoint = v;
+  persist();
+  verifyEndpoint();
+  showFleet();
+  flushQueue();
+}
+function skipSetup() { S.endpoint = ""; persist(); showFleet(); }
+
+async function verifyEndpoint() {
+  if (!S.endpoint) return;
+  setSyncPill("syncing","Checking…");
+  try {
+    const r = await fetch(S.endpoint);
+    const d = await r.json();
+    setSyncPill(d.ok ? "ready" : "error", d.ok ? "Connected" : "Error");
+    if (d.ok) toast("Connected · " + (d.captured||0) + " rows in sheet","ok");
+  } catch(e) { setSyncPill("error","Unreachable"); }
+}
+
+// ═══════════════════════════════════════════════════════════
+// VIEWS
+// ═══════════════════════════════════════════════════════════
+function show(id) {
+  document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+
+function showFleet() {
+  renderFleet();
+  show("v-fleet");
+}
+
+function showCapture(boat) {
+  S.currentBoat = boat;
+  document.getElementById("h-num").textContent  = boat.num;
+  document.getElementById("h-flag").textContent = boat.flag;
+  renderCylGroups(boat);
+  updateHeroProgress(boat);
+  show("v-capture");
+  window.scrollTo(0, 0);
+}
+
+// ═══════════════════════════════════════════════════════════
+// FLEET
+// ═══════════════════════════════════════════════════════════
+function boatCaptured(num) { return Object.keys(S.captured[num] || {}).length; }
+function boatStatus(num) {
+  const n = boatCaptured(num);
+  return n === 0 ? "pending" : n >= TOTAL_PER_BOAT ? "complete" : "partial";
+}
+function totalCaptured() { return BOATS.reduce((a,b) => a + boatCaptured(b.num), 0); }
+
+function renderFleet() {
+  const grid = document.getElementById("fleet-grid");
+  grid.innerHTML = "";
+  BOATS.forEach(b => {
+    const st = boatStatus(b.num);
+    const n  = boatCaptured(b.num);
+    const card = document.createElement("div");
+    card.className = "boat-card " + (st === "complete" ? "complete" : st === "partial" ? "partial" : "");
+    const label = st==="complete" ? "Complete" : st==="partial" ? `${n} / ${TOTAL_PER_BOAT}` : "Pending";
+    const dotCls = st==="complete" ? "dot-c" : st==="partial" ? "dot-i" : "dot-p";
+    card.innerHTML = `
+      <div class="b-num">${b.num}</div>
+      <div class="b-flag">${b.flag}</div>
+      <div class="b-stat"><span class="dot ${dotCls}"></span>${label}</div>
+      ${st==="complete" ? `<div class="tick-badge"><svg fill="none" stroke="#fff" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div>` : ""}
+    `;
+    card.onclick = () => showCapture(b);
+    grid.appendChild(card);
+  });
+  // queue banner
+  const qs = document.getElementById("queue-slot");
+  if (S.endpoint && S.queue.length > 0) {
+    qs.innerHTML = `<div class="queue-banner"><p><b>${S.queue.length} row${S.queue.length>1?"s":""}</b> queued — not yet synced</p><button class="retry-btn" onclick="flushQueue()">Retry</button></div>`;
+  } else { qs.innerHTML = ""; }
+  updateGlobalProgress();
+}
+
+function updateGlobalProgress() {
+  const total = BOATS.length * TOTAL_PER_BOAT;
+  const done  = totalCaptured();
+  document.getElementById("prog-fill").style.width = (done/total*100) + "%";
+  document.getElementById("prog-n").textContent = done;
+  document.getElementById("prog-total").textContent = total;
+}
+
+// ═══════════════════════════════════════════════════════════
+// CYLINDER GROUPS
+// ═══════════════════════════════════════════════════════════
+function renderCylGroups(boat) {
+  const container = document.getElementById("cyl-groups");
+  container.innerHTML = "";
+
+  // Group by system
+  const groups = {};
+  CYL_DEFS.forEach(c => { if(!groups[c.group]) groups[c.group]=[]; groups[c.group].push(c); });
+
+  Object.entries(groups).forEach(([grpName, cyls]) => {
+    const wrap = document.createElement("div");
+    wrap.className = "sys-group";
+
+    const captured = cyls.filter(c => (S.captured[boat.num]||{})[c.id]).length;
+    wrap.innerHTML = `<div class="sys-group-header">${grpName}<span class="sys-badge">${captured}/${cyls.length}</span></div>`;
+
+    cyls.forEach(c => {
+      const saved = ((S.captured[boat.num]||{})[c.id]) || null;
+      const row   = document.createElement("div");
+      row.className = "cyl-row" + (saved ? " captured" : "");
+      row.id = "row-" + c.id;
+
+      const sideClass = c.side==="Port" ? "side-port" : c.side==="Stbd" ? "side-stbd" : "side-na";
+      const sideLabel = c.side==="Port" ? "Port" : c.side==="Stbd" ? "Stbd" : c.side || "—";
+
+      const doneHtml = saved ? `<span class="cyl-done-badge"><svg fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24" width="11" height="11"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>Saved</span>` : "";
+
+      row.innerHTML = `
+        <div class="cyl-meta">
+          <span class="cyl-pos">${c.label}</span>
+          <span class="cyl-side ${sideClass}">${sideLabel}</span>
+          ${doneHtml}
+        </div>
+        <div class="f-wrap">
+          <span class="f-label">QR Code</span>
+          <div class="f-row">
+            <input class="f-in${saved?.qr?' filled':''}" id="qr-${c.id}" value="${saved?.qr||''}" placeholder="Scan or type" autocapitalize="characters" autocomplete="off">
+            <button class="scan-btn" onclick="openScanner('qr','${c.id}')" aria-label="Scan QR">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path stroke-linecap="round" d="M14 14h3v3m4-3v.01M14 21v.01M17 21h4M21 17h.01"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="f-wrap">
+          <span class="f-label">Serial No.</span>
+          <div class="f-row">
+            <input class="f-in${saved?.serial?' filled':''}" id="sn-${c.id}" value="${saved?.serial||''}" placeholder="e.g. 9461" autocapitalize="characters" autocomplete="off">
+            <button class="scan-btn" onclick="openScanner('sn','${c.id}')" aria-label="Scan serial">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path stroke-linecap="round" d="M14 14h3v3m4-3v.01M14 21v.01M17 21h4M21 17h.01"/></svg>
+            </button>
+          </div>
+        </div>
+      `;
+      // live fill tracking
+      ["qr","sn"].forEach(f => {
+        const inp = row.querySelector(`#${f}-${c.id}`);
+        inp.addEventListener("input", () => inp.classList.toggle("filled", inp.value.trim().length > 0));
+      });
+      wrap.appendChild(row);
+    });
+    container.appendChild(wrap);
+  });
+}
+
+function updateHeroProgress(boat) {
+  const n = boatCaptured(boat.num);
+  document.getElementById("h-prog").style.width = (n/TOTAL_PER_BOAT*100)+"%";
+  document.getElementById("h-prog-lbl").textContent = `${n} / ${TOTAL_PER_BOAT} captured`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// SAVE & SYNC
+// ═══════════════════════════════════════════════════════════
+async function saveCapture() {
+  const boat = S.currentBoat;
+  const tech = document.getElementById("tech-name").value.trim();
+  const rows  = [];
+
+  CYL_DEFS.forEach(c => {
+    const qr     = (document.getElementById("qr-"+c.id)?.value||"").trim();
+    const serial = (document.getElementById("sn-"+c.id)?.value||"").trim();
+    if (!qr && !serial) return;
+
+    const entry = { qr, serial, tech, ts: new Date().toISOString() };
+    // store locally
+    if (!S.captured[boat.num]) S.captured[boat.num] = {};
+    S.captured[boat.num][c.id] = entry;
+
+    rows.push({
+      boatNum:    boat.num,
+      flag:       boat.flag,
+      position:   c.label,
+      side:       c.side || "",
+      system:     c.group,
+      qr,
+      serial,
+      partNumber: c.partNo,
+      condition:  "",
+      tech,
+      notes:      "",
+      timestamp:  entry.ts
+    });
+  });
+
+  if (rows.length === 0) { toast("Fill in at least one QR or serial number","warn"); return; }
+
+  persist();
+  const btn = document.getElementById("save-btn");
+  btn.disabled = true; btn.textContent = "Syncing…";
+
+  if (S.endpoint) {
+    setSyncPill("syncing","Syncing…");
+    const ok = await pushRows(rows);
+    if (ok) {
+      toast(`✓ ${rows.length} cylinder${rows.length>1?"s":""} saved to sheet`,"ok");
+      setSyncPill("synced","Synced");
+    } else {
+      S.queue.push(...rows); persist();
+      toast(`Saved offline · ${S.queue.length} rows queued`,"warn");
+      setSyncPill("error","Sync failed");
+    }
+  } else {
+    toast(`Saved locally (no endpoint set)`,"");
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = `<svg fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24" width="20" height="20"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>Save &amp; Sync to Sheet`;
+  renderCylGroups(boat);
+  updateHeroProgress(boat);
+  updateGlobalProgress();
+}
+
+async function pushRows(rows) {
+  try {
+    const res  = await fetch(S.endpoint, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(rows) });
+    const data = await res.json();
+    return data.ok === true;
+  } catch(e) { return false; }
+}
+
+async function flushQueue() {
+  if (!S.endpoint || S.queue.length === 0) return;
+  setSyncPill("syncing","Syncing…");
+  const ok = await pushRows(S.queue);
+  if (ok) {
+    S.queue = []; persist();
+    toast(`Queue flushed — all rows synced`,"ok");
+    setSyncPill("synced","Synced");
+    renderFleet();
+  } else {
+    toast("Sync failed — will retry later","err");
+    setSyncPill("error","Error");
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// QR SCANNER — Safari-hardened
+// ═══════════════════════════════════════════════════════════
+let scanStream = null, scanRAF = null, scanTarget = null;
+
+function setScanState(state) {
+  document.getElementById("scan-state-requesting").style.display = state === "requesting" ? "block" : "none";
+  document.getElementById("scan-state-live").style.display       = state === "live"       ? "flex"  : "none";
+  document.getElementById("scan-state-denied").style.display     = state === "denied"     ? "block" : "none";
+}
+
+function openScanner(field, cylId) {
+  scanTarget = { field, cylId };
+  document.getElementById("scan-found").style.display = "none";
+  document.getElementById("manual-scan-input").value  = "";
+  document.getElementById("scanner").classList.add("open");
+  setScanState("requesting");
+  startCamera();
+}
+
+async function startCamera() {
+  // Safari requires we check permission API first where available
+  if (navigator.permissions) {
+    try {
+      const perm = await navigator.permissions.query({ name: "camera" });
+      if (perm.state === "denied") { showDenied(); return; }
+    } catch(e) { /* permissions API not supported — continue anyway */ }
+  }
+
+  // Progressive constraint fallback:
+  // 1st try: rear camera explicit
+  // 2nd try: environment ideal (Safari sometimes rejects exact)
+  // 3rd try: any video (front camera acceptable)
+  const constraints = [
+    { video: { facingMode: { exact: "environment" } } },
+    { video: { facingMode: "environment" } },
+    { video: true }
+  ];
+
+  for (const c of constraints) {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia(c);
+      scanStream = stream;
+      const vid = document.getElementById("s-video");
+      vid.srcObject = stream;
+
+      // Safari needs explicit play() call after srcObject assignment
+      // and may not auto-play without user gesture — we're inside one (button tap)
+      await vid.play().catch(() => {});
+
+      // Wait for metadata so we get real dimensions
+      await new Promise(resolve => {
+        if (vid.readyState >= 1) { resolve(); return; }
+        vid.addEventListener("loadedmetadata", resolve, { once: true });
+        setTimeout(resolve, 2000); // fallback timeout
+      });
+
+      const cvs = document.getElementById("s-canvas");
+      cvs.width  = vid.videoWidth  || 640;
+      cvs.height = vid.videoHeight || 480;
+
+      setScanState("live");
+      tickScan();
+      return; // success — stop trying constraints
+    } catch(err) {
+      const name = err.name || "";
+      // NotAllowedError / PermissionDeniedError = user or system blocked camera
+      if (name === "NotAllowedError" || name === "PermissionDeniedError") {
+        showDenied(); return;
+      }
+      // OverconstrainedError / NotFoundError = try next constraint
+      // continue loop
+    }
+  }
+
+  // All constraints failed without a permission error — likely no camera
+  showDenied();
+}
+
+function showDenied() {
+  closeStream();
+  setScanState("denied");
+  setTimeout(() => document.getElementById("manual-scan-input").focus(), 100);
+}
+
+function tickScan() {
+  const vid = document.getElementById("s-video");
+  const cvs = document.getElementById("s-canvas");
+  const ctx = cvs.getContext("2d");
+  if (vid.readyState === vid.HAVE_ENOUGH_DATA && cvs.width > 0) {
+    ctx.drawImage(vid, 0, 0, cvs.width, cvs.height);
+    const img  = ctx.getImageData(0, 0, cvs.width, cvs.height);
+    const code = jsQR(img.data, img.width, img.height, { inversionAttempts: "attemptBoth" });
+    if (code && code.data) { onScanned(code.data); return; }
+  }
+  scanRAF = requestAnimationFrame(tickScan);
+}
+
+function onScanned(data) {
+  if (navigator.vibrate) navigator.vibrate(80);
+  const found = document.getElementById("scan-found");
+  found.textContent = "✓ " + data;
+  found.style.display = "block";
+  setTimeout(() => { commitValue(data); }, 700);
+}
+
+function commitManual() {
+  const val = document.getElementById("manual-scan-input").value.trim();
+  if (!val) { document.getElementById("manual-scan-input").focus(); return; }
+  commitValue(val);
+}
+
+function commitValue(data) {
+  const { field, cylId } = scanTarget;
+  const inputId = field === "qr" ? `qr-${cylId}` : `sn-${cylId}`;
+  const el = document.getElementById(inputId);
+  if (el) { el.value = data; el.classList.add("filled"); }
+  closeScanner();
+  const row = document.getElementById("row-" + cylId);
+  if (row) row.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+function closeStream() {
+  cancelAnimationFrame(scanRAF); scanRAF = null;
+  if (scanStream) { scanStream.getTracks().forEach(t => t.stop()); scanStream = null; }
+  const vid = document.getElementById("s-video");
+  if (vid) vid.srcObject = null;
+}
+
+function closeScanner() {
+  closeStream();
+  document.getElementById("scanner").classList.remove("open");
+}
+
+// ═══════════════════════════════════════════════════════════
+// UI HELPERS
+// ═══════════════════════════════════════════════════════════
+function setSyncPill(cls, label) {
+  const pill = document.getElementById("sync-pill");
+  pill.className = "sync-pill " + cls;
+  document.getElementById("sync-lbl").textContent = label;
+}
+function updateSyncPill() { setSyncPill(S.endpoint ? "ready" : "none", S.endpoint ? "Ready" : "Offline"); }
+
+let toastTm;
+function toast(msg, type="") {
+  const el = document.getElementById("toast");
+  el.textContent = msg; el.className = "toast show " + type;
+  clearTimeout(toastTm);
+  toastTm = setTimeout(() => el.classList.remove("show"), 3200);
+}
+</script>
+</body>
+</html>
